@@ -1,0 +1,29 @@
+PODS:
+  - Flutter (1.0.0)
+  - MarketingCloudSDK (7.5.0)
+  - marketingcloudsf (0.0.1):
+    - Flutter
+    - MarketingCloudSDK (= 7.5)
+
+DEPENDENCIES:
+  - Flutter (from `Flutter`)
+  - marketingcloudsf (from `.symlinks/plugins/marketingcloudsf/ios`)
+
+SPEC REPOS:
+  trunk:
+    - MarketingCloudSDK
+
+EXTERNAL SOURCES:
+  Flutter:
+    :path: Flutter
+  marketingcloudsf:
+    :path: ".symlinks/plugins/marketingcloudsf/ios"
+
+SPEC CHECKSUMS:
+  Flutter: 434fef37c0980e73bb6479ef766c45957d4b510c
+  MarketingCloudSDK: 9a7c6681b626f55be4838e90be2534c90e725e90
+  marketingcloudsf: edbf341276592c3b8199abbc6fdddac16df42dcc
+
+PODFILE CHECKSUM: aafe91acc616949ddb318b77800a7f51bffa2a4c
+
+COCOAPODS: 1.10.1

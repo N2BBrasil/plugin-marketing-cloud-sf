@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "587606635316",
+    "project_id": "n2b-sf",
+    "storage_bucket": "n2b-sf.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:587606635316:android:77cfad49336b843d842b61",
+        "android_client_info": {
+          "package_name": "com.n2bbrasil.marketingcloudsf_example"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "587606635316-u5l23pl4j0rjg1vssgo8pos1vqhsuolu.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC1T0jh6OO8T83rZw1Ea9HwPWRVNwxsqws"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "587606635316-u5l23pl4j0rjg1vssgo8pos1vqhsuolu.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

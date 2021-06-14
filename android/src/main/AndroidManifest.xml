@@ -1,0 +1,7 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.n2bbrasil.marketingcloudsf">
+<!--  <application>-->
+<!--      <meta-data-->
+<!--          android:resource="@drawable/launch_background"/>-->
+<!--    </application>-->
+</manifest>
