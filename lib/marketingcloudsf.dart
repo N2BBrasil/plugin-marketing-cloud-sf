@@ -87,7 +87,9 @@ class Marketingcloudsf {
   static void logSdkState() {
     _channel.invokeMethod<void>('logSdkState');
   }
-
+  static void requestNotificationPermissions(){
+    _channel.invokeMethod<void>('requestNotificationPermissions');
+  }
   void inAppMenssage() {
     _channel.invokeMethod<void>('inAppMenssage');
   }
