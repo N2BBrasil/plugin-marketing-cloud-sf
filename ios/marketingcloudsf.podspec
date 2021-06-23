@@ -5,11 +5,9 @@
 Pod::Spec.new do |s|
   s.name             = 'marketingcloudsf'
   s.version          = '0.0.1'
-  s.summary          = 'A new Flutter project.'
-  s.description      = <<-DESC
-A new Flutter project.
-                       DESC
-  s.homepage         = 'http://example.com'
+  s.summary          = 'A Sales Force Marketing Cloud Plugin'
+  s.description      = 'A Sales Force Marketing Cloud Plugin'
+  s.homepage         = 'https://salesforce-marketingcloud.github.io/MarketingCloudSDK-iOS/'
   s.license          = { :file => '../LICENSE' }
   s.author           = { 'Your Company' => 'email@example.com' }
   s.source           = { :path => '.' }
