@@ -5,20 +5,23 @@ import 'package:flutter/services.dart';
 class Marketingcloudsf {
   static const MethodChannel _channel = MethodChannel('marketingcloudsf');
 
-  static void init({
+  static Future<void> init({
     required String setApplicationId,
     required String setAccessToken,
     required String setSenderId,
     required String setMarketingCloudServerUrl,
     required String setMid,
-  }) {
-    _channel.invokeMethod<void>('init', {
-      'appID': setApplicationId,
-      'accessToken': setAccessToken,
-      'senderId': setSenderId,
-      'appEndpoint': setMarketingCloudServerUrl,
-      'mid': setMid
-    });
+  }) async {
+    await _channel.invokeMethod<void>(
+      'initialize',
+      {
+        'appID': setApplicationId,
+        'accessToken': setAccessToken,
+        'senderId': setSenderId,
+        'appEndpoint': setMarketingCloudServerUrl,
+        'mid': setMid
+      },
+    );
   }
 
   static Future<bool?> get isPushEnabled async {
@@ -34,14 +37,18 @@ class Marketingcloudsf {
     _channel.invokeMethod<void>('disablePush');
   }
 
-  static Future<String?> get getSystemToken async {
-    final String? token = await _channel.invokeMethod('getSystemToken');
-    return token;
+  static void setMessagingToken(String token) {
+    _channel.invokeMethod('setMessagingToken', {
+      'token': token,
+    });
+  }
+
+  static Future<String?> get getMessagingToken async {
+    return _channel.invokeMethod('getMessagingToken');
   }
 
   static Future<Map<Object?, Object?>?> get getAttributes async {
-    final Map<Object?, Object?>? attr =
-        await _channel.invokeMethod('getAttributes');
+    final Map<Object?, Object?>? attr = await _channel.invokeMethod('getAttributes');
     return attr;
   }
 
@@ -71,30 +78,11 @@ class Marketingcloudsf {
   }
 
   static Future<String?> get getContactKey async {
-    final String? contactKey =
-        await _channel.invokeMethod<String>('getContactKey');
+    final String? contactKey = await _channel.invokeMethod<String>('getContactKey');
     return contactKey;
   }
 
-  static void enableVerboseLogging() {
-    _channel.invokeMethod<void>('enableVerboseLogging');
-  }
-
-  static void disableVerboseLogging() {
-    _channel.invokeMethod<void>('disableVerboseLogging');
-  }
-
-  static void logSdkState() {
-    _channel.invokeMethod<void>('logSdkState');
-  }
-  static Future requestNotificationPermissions()async{
-    await _channel.invokeMethod<dynamic>('requestNotificationPermissions');
-  }
-  void inAppMenssage() {
-    _channel.invokeMethod<void>('inAppMenssage');
-  }
-
- static void trackCart({
+  static void trackCart({
     required String item,
     required int quantity,
     required double value,
@@ -108,7 +96,7 @@ class Marketingcloudsf {
     });
   }
 
- static void trackConversion(
+  static void trackConversion(
       {required String item,
       required int quantity,
       required double value,
@@ -127,20 +115,28 @@ class Marketingcloudsf {
     });
   }
 
- static void trackPageViews(
-      {required String url,
-       String title ='',
-       String item = '',
-       String searchTerms = ''}) {
-    _channel.invokeMethod<void>('trackPageViews', {
-      'url':url,
-      'title': title,
-      'item': item,
-      'searchTerms':searchTerms,
-    });
+  static void trackPageViews({
+    required String url,
+    String title = '',
+    String item = '',
+    String searchTerms = '',
+  }) {
+    _channel.invokeMethod<void>(
+      'trackPageViews',
+      {
+        'url': url,
+        'title': title,
+        'item': item,
+        'searchTerms': searchTerms,
+      },
+    );
   }
 
-static  void trackInboxMessageOpens() {
-    _channel.invokeMethod<void>('trackInboxMessageOpens');
+  static void logSdkState() {
+    _channel.invokeMethod<void>('logSdkState');
+  }
+
+  static void handlePushMessage(Map<String, dynamic> message) {
+    _channel.invokeMethod<void>('handlePushMessage', {message: message});
   }
 }

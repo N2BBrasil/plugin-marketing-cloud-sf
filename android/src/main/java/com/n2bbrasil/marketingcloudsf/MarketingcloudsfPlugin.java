@@ -1,12 +1,9 @@
 package com.n2bbrasil.marketingcloudsf;
 
 import android.app.Activity;
-import android.app.PendingIntent;
 import android.content.Context;
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 
-import io.flutter.BuildConfig;
 import io.flutter.embedding.engine.plugins.FlutterPlugin;
 import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding;
 import io.flutter.embedding.engine.plugins.activity.ActivityAware;
@@ -15,81 +12,50 @@ import io.flutter.plugin.common.MethodCall;
 import io.flutter.plugin.common.MethodChannel;
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler;
 import io.flutter.plugin.common.MethodChannel.Result;
-import io.flutter.plugin.common.PluginRegistry.Registrar;
 
 
-import android.content.Intent;
-import android.net.Uri;
-import android.text.TextUtils;
 import android.util.Log;
 
 
-import com.salesforce.marketingcloud.InitializationStatus;
-import com.salesforce.marketingcloud.MCLogListener;
-import com.salesforce.marketingcloud.MarketingCloudConfig;
+import com.salesforce.marketingcloud.MCLogListener.AndroidLogListener;
 import com.salesforce.marketingcloud.MarketingCloudSdk;
-import com.salesforce.marketingcloud.UrlHandler;
+import com.salesforce.marketingcloud.MarketingCloudSdk.WhenReadyListener;
 import com.salesforce.marketingcloud.analytics.AnalyticsManager;
 import com.salesforce.marketingcloud.analytics.PiCart;
 import com.salesforce.marketingcloud.analytics.PiCartItem;
 import com.salesforce.marketingcloud.analytics.PiOrder;
-import com.salesforce.marketingcloud.messages.Region;
-import com.salesforce.marketingcloud.messages.RegionMessageManager;
-import com.salesforce.marketingcloud.messages.geofence.GeofenceMessageResponse;
 import com.salesforce.marketingcloud.messages.iam.InAppMessage;
 import com.salesforce.marketingcloud.messages.iam.InAppMessageManager;
-import com.salesforce.marketingcloud.messages.proximity.ProximityMessageResponse;
-import com.salesforce.marketingcloud.notifications.NotificationCustomizationOptions;
-import com.salesforce.marketingcloud.notifications.NotificationManager;
-import com.salesforce.marketingcloud.notifications.NotificationMessage;
-import com.salesforce.marketingcloud.registration.Registration;
-import com.salesforce.marketingcloud.registration.RegistrationManager;
+import com.salesforce.marketingcloud.messages.push.PushMessageManager;
 
 import org.jetbrains.annotations.NotNull;
+import org.json.JSONObject;
 
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
-import java.util.TimeZone;
 
 import static com.google.android.gms.common.util.CollectionUtils.listOf;
 
 
-/** MarketingcloudsfPlugin */
 public class MarketingcloudsfPlugin implements FlutterPlugin, MethodCallHandler, ActivityAware {
-  /// The MethodChannel that will the communication between Flutter and native Android
-  ///
-  /// This local reference serves to register the plugin with the Flutter Engine and unregister it
-  /// when the Flutter Engine is detached from the Activity
   public MethodChannel channel;
   public MarketingCloudSdk sdk;
   public AnalyticsManager analyticsManager;
   public MarketingCloudSdk.InitializationListener listener;
   public Activity activity;
-  public static final String DEFAULT_ERROR_CODE = "Marketing_cloud_sdk_error";
   public Context context;
+  private String blockedMessageId;
 
   @Override
   public void onAttachedToEngine(@NonNull FlutterPluginBinding flutterPluginBinding) {
-
-     context = flutterPluginBinding.getApplicationContext();
-
-      
-    MarketingCloudSdk.setLogLevel(BuildConfig.DEBUG ? Log.VERBOSE : Log.ERROR);
-    MarketingCloudSdk.setLogListener(new MCLogListener.AndroidLogListener());
-
+    context = flutterPluginBinding.getApplicationContext();
     channel = new MethodChannel(flutterPluginBinding.getBinaryMessenger(), "marketingcloudsf");
     channel.setMethodCallHandler(this);
-
-
-   
- 
   }
 
 
@@ -98,13 +64,77 @@ public class MarketingcloudsfPlugin implements FlutterPlugin, MethodCallHandler,
     channel.setMethodCallHandler(null);
   }
 
-  public Boolean isPushEnabled() {
+  public void initialize(String appID, String accessToken, String senderId, String appEndpoint, String mid){
+    if(io.flutter.BuildConfig.DEBUG) {
+      MarketingCloudSdk.setLogLevel(Log.VERBOSE);
+      MarketingCloudSdk.setLogListener(new AndroidLogListener());
+    }
 
+    MarketingCloudSdk.init(
+            context,
+            MarketingcloudsfConfig.prepareConfigBuilder(
+                    context,
+                    appID,
+                    accessToken,
+                    senderId,
+                    appEndpoint,
+                    mid
+            ),
+            listener
+    );
+    sdk = MarketingCloudSdk.getInstance();
+    MarketingCloudSdk.requestSdk(new WhenReadyListener() {
+      @Override
+      public void ready(@NonNull MarketingCloudSdk marketingCloudSdk) {
+        inAppMenssageInit();
+        analyticsManager  = marketingCloudSdk.getAnalyticsManager();
+
+        if(blockedMessageId != null) {
+          marketingCloudSdk.getInAppMessageManager().showMessage(blockedMessageId);
+        }
+      }
+    });
+  }
+
+  public void inAppMenssageInit() {
+    sdk.getInAppMessageManager().setInAppMessageListener(new InAppMessageManager.EventListener() {
+      @Override
+      public boolean shouldShowMessage(@NonNull @NotNull InAppMessage inAppMessage) {
+        Log.d("SF_INAPP_RECEIVE", inAppMessage.toString() );
+        if (shouldShowMessage(inAppMessage)) {
+          return true;
+        } else {
+          blockedMessageId = inAppMessage.id();
+          return false;
+        }
+      }
+
+      @Override
+      public void didShowMessage(@NonNull @NotNull InAppMessage inAppMessage) {      }
+
+      @Override
+      public void didCloseMessage(@NonNull @NotNull InAppMessage inAppMessage) {
+        Log.d("SF_INAPP_CLOSE", inAppMessage.toString() );
+      }
+    });
+  }
+
+  public void handlePushMessage(Map<String,String> message) {
+    if(PushMessageManager.isMarketingCloudPush(message)) {
+      MarketingCloudSdk.requestSdk(new WhenReadyListener() {
+        @Override
+        public void ready(@NonNull MarketingCloudSdk marketingCloudSdk) {
+          marketingCloudSdk.getPushMessageManager().handleMessage(message);
+        }
+      });
+    }
+  }
+
+  public Boolean isPushEnabled() {
     return sdk.getPushMessageManager().isPushEnabled();
   }
 
   public void enablePush() {
- 
     sdk.getPushMessageManager().enablePush();
   }
 
@@ -112,14 +142,14 @@ public class MarketingcloudsfPlugin implements FlutterPlugin, MethodCallHandler,
     sdk.getPushMessageManager().disablePush();
   }
 
-  public String getSystemToken() {
-
-
-     return sdk.getPushMessageManager().getPushToken();
+  public void logSdkState() {
+    Log.d("SDKSTATE",  sdk.getSdkState().toString());
   }
 
-  public Map<String, String> getAttributes() {
+  public void setMessagingToken(String token) { sdk.getPushMessageManager().setPushToken(token); }
+  public String getMessagingToken() { return sdk.getPushMessageManager().getPushToken(); }
 
+  public Map<String, String> getAttributes() {
     Map<String, String> attributes = sdk.getRegistrationManager().getAttributes();
     Map<String, String> resultMap = new HashMap<>(attributes.size());
 
@@ -129,10 +159,7 @@ public class MarketingcloudsfPlugin implements FlutterPlugin, MethodCallHandler,
       }
     }
 
-
     return resultMap;
-
-
   }
 
   public void setAttribute(Map<String, Object> arguments) {
@@ -140,7 +167,6 @@ public class MarketingcloudsfPlugin implements FlutterPlugin, MethodCallHandler,
   }
 
   public void clearAttribute(Map<String, Object> arguments) {
-
     sdk.getRegistrationManager().edit().clearAttribute(arguments.get("key").toString()).commit();
   }
 
@@ -153,18 +179,15 @@ public class MarketingcloudsfPlugin implements FlutterPlugin, MethodCallHandler,
   }
 
   public List<String> getTags() {
-
     Set<String> tags = sdk.getRegistrationManager().getTags();
     List<String> result = new ArrayList<>(tags.size());
     result.addAll(tags);
 
     return result;
-
-
   }
 
   public void setContactKey(Map<String, Object> arguments) {
-    sdk.getRegistrationManager().edit().setContactKey(arguments.get("contactKey").toString()).commit();
+    sdk.getRegistrationManager().edit().setContactKey(Objects.requireNonNull(arguments.get("contactKey")).toString()).commit();
   }
 
   public String getContactKey() {
@@ -172,112 +195,31 @@ public class MarketingcloudsfPlugin implements FlutterPlugin, MethodCallHandler,
   }
 
 
-  public void enableVerboseLogging() {
-    //sdk.setLogLevel(MCLogListener.VERBOSE);
-    //sdk.setLogListener(new MCLogListener.AndroidLogListener());
-  }
-
-  public void disableVerboseLogging() {
-    sdk.setLogListener(null);
-  }
-
-  public void logSdkState() {
-    //log("MCSDK STATE", sdk.getSdkState().toString());
-  }
-  public void init(Map<String, Object> arguments){
-    MarketingCloudSdk.init(
-      context,
-      MarketingCloudConfig
-              .builder()
-              .setApplicationId(arguments.get("appID").toString())
-              .setAccessToken(arguments.get("accessToken").toString())
-              .setSenderId(arguments.get("senderId").toString())
-              .setMarketingCloudServerUrl(arguments.get("appEndpoint").toString())
-              .setMid(arguments.get("mid").toString())
-              .setDelayRegistrationUntilContactKeyIsSet(true)
-              .setUseLegacyPiIdentifier(true)
-              .setMarkMessageReadOnInboxNotificationOpen(true)
-              .setAnalyticsEnabled(true)
-              .setPiAnalyticsEnabled(true)
-              .setInboxEnabled(true)
-              .setGeofencingEnabled(true)
-              .setProximityEnabled(true)
-              .setNotificationCustomizationOptions(NotificationCustomizationOptions.create(R.drawable.ic_launcher))
-              // Other configuration options
-              .setUrlHandler(new UrlHandler() {
-                @Nullable
-                @Override
-                public PendingIntent handleUrl(@NonNull Context context, @NonNull String url, @NonNull String type) {
-                  // Open IAM URLs in device browser.
-                  return PendingIntent.getActivity(
-                          context,
-                          1,
-                          new Intent(Intent.ACTION_VIEW, Uri.parse(url)),
-                          PendingIntent.FLAG_UPDATE_CURRENT);
-                }
-              })
-              .build(context),
-      listener);
-      sdk = MarketingCloudSdk.getInstance();
-      analyticsManager  = sdk.getAnalyticsManager();
-      
-  }
-
   public void trackCart(Map<String, Object> arguments) {
-
-
     PiCartItem cartItem = PiCartItem.create(arguments.get("item").toString(), Integer.parseInt(arguments.get("quantity").toString()), Double.parseDouble(arguments.get("value").toString()), arguments.get("uniqueId").toString());
-    PiCart cart = PiCart.create(listOf(cartItem));
+    PiCart cart = PiCart.create(Collections.singletonList(cartItem));
 
     analyticsManager.trackCartContents(cart);
   }
   public void trackConversion(Map<String, Object> arguments) {
-
-
     PiCartItem cartItem = PiCartItem.create(arguments.get("item").toString(), Integer.parseInt(arguments.get("quantity").toString()), Double.parseDouble(arguments.get("value").toString()), arguments.get("uniqueId").toString());
-    PiCart cart = PiCart.create(listOf(cartItem));
+    PiCart cart = PiCart.create(Collections.singletonList(cartItem));
     PiOrder order = PiOrder.create(cart, arguments.get("orderNumber").toString(), Double.parseDouble(arguments.get("shipping").toString()), Double.parseDouble(arguments.get("discount").toString()));
 
     analyticsManager.trackCartConversion(order);
   }
   public void trackPageViews(Map<String, Object> arguments) {
-
     analyticsManager.trackPageView(arguments.get("url").toString(), arguments.get("title").toString(),arguments.get("item").toString(),arguments.get("searchTerms").toString() );
   }
-  public void trackInboxMessageOpens(Map<String, Object> arguments) {
-    //analyticsManager.trackInboxOpenEvent(menssage);
-  }
-  public void inAppMenssage(Map<String, Object> arguments) {
-    sdk.getInAppMessageManager().setInAppMessageListener(new InAppMessageManager.EventListener() {
-      @Override
-      public boolean shouldShowMessage(@NonNull @NotNull InAppMessage inAppMessage) {
 
-
-        return true;
-      }
-
-      @Override
-      public void didShowMessage(@NonNull @NotNull InAppMessage inAppMessage) {
-
-      }
-
-      @Override
-      public void didCloseMessage(@NonNull @NotNull InAppMessage inAppMessage) {
-
-      }
-    });
-  }
   @Override
   public void onMethodCall(@NonNull MethodCall call, @NonNull Result result) {
-
-   
-    
     switch (call.method) {
-      case "inAppMenssage":
-        inAppMenssage(call.<Map<String, Object>>arguments());
+      case "handlePushMessage":
+        handlePushMessage(call.argument("message"));
         break;
       case "trackCart":
-      trackCart(call.<Map<String, Object>>arguments());
+        trackCart(call.<Map<String, Object>>arguments());
         break;
       case "trackConversion":
         trackConversion(call.<Map<String, Object>>arguments());
@@ -285,11 +227,14 @@ public class MarketingcloudsfPlugin implements FlutterPlugin, MethodCallHandler,
       case "trackPageViews":
         trackPageViews(call.<Map<String, Object>>arguments());
         break;
-      case "trackInboxMessageOpens":
-        trackInboxMessageOpens(call.<Map<String, Object>>arguments());
-        break;
-      case "init":
-        init(call.<Map<String, Object>>arguments());
+      case "initialize":
+        initialize(
+                call.argument("appID"),
+                call.argument("accessToken"),
+                call.argument("senderId"),
+                call.argument("appEndpoint"),
+                call.argument("mid")
+        );
         break;
       case "isPushEnabled":
         result.success(isPushEnabled());
@@ -300,8 +245,11 @@ public class MarketingcloudsfPlugin implements FlutterPlugin, MethodCallHandler,
       case "disablePush":
         disablePush();
         break;
-      case "getSystemToken":
-        result.success(getSystemToken());
+      case "getMessagingToken":
+        result.success(getMessagingToken());
+        break;
+      case "setMessagingToken":
+        setMessagingToken(call.argument("token"));
         break;
       case "getAttributes":
         result.success(getAttributes());
@@ -326,12 +274,6 @@ public class MarketingcloudsfPlugin implements FlutterPlugin, MethodCallHandler,
         break;
       case "getContactKey":
         result.success(getContactKey());
-        break;
-      case "enableVerboseLogging":
-        enableVerboseLogging();
-        break;
-      case "disableVerboseLogging":
-        disableVerboseLogging();
         break;
       case "logSdkState":
         logSdkState();
