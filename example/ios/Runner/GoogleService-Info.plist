@@ -3,21 +3,21 @@
 <plist version="1.0">
 <dict>
 	<key>CLIENT_ID</key>
-	<string>587606635316-3p5b1u2tmd6qqqjfkuo1go5g0gak0khj.apps.googleusercontent.com</string>
+	<string>797050328040-f33gah1hdsd47lgsnggchqdt1b4ka3bm.apps.googleusercontent.com</string>
 	<key>REVERSED_CLIENT_ID</key>
-	<string>com.googleusercontent.apps.587606635316-3p5b1u2tmd6qqqjfkuo1go5g0gak0khj</string>
+	<string>com.googleusercontent.apps.797050328040-f33gah1hdsd47lgsnggchqdt1b4ka3bm</string>
 	<key>API_KEY</key>
-	<string>AIzaSyAgZoq07Uhp8n-wEflOV_ZKMLg3lhZ2GU8</string>
+	<string>AIzaSyBejyIGXg3BEDkx7RWAMeWHTIxeL6bLae0</string>
 	<key>GCM_SENDER_ID</key>
-	<string>587606635316</string>
+	<string>797050328040</string>
 	<key>PLIST_VERSION</key>
 	<string>1</string>
 	<key>BUNDLE_ID</key>
-	<string>com.n2bbrasil.marketingcloudsfExample</string>
+	<string>com.smartfit.app.smart-nutri-ios</string>
 	<key>PROJECT_ID</key>
-	<string>n2b-sf</string>
+	<string>mynutri-staging</string>
 	<key>STORAGE_BUCKET</key>
-	<string>n2b-sf.appspot.com</string>
+	<string>mynutri-staging.appspot.com</string>
 	<key>IS_ADS_ENABLED</key>
 	<false></false>
 	<key>IS_ANALYTICS_ENABLED</key>
@@ -29,6 +29,8 @@
 	<key>IS_SIGNIN_ENABLED</key>
 	<true></true>
 	<key>GOOGLE_APP_ID</key>
-	<string>1:587606635316:ios:5b8689a2c967bf5f842b61</string>
+	<string>1:797050328040:ios:71db9e495952fe91180a5d</string>
+	<key>DATABASE_URL</key>
+	<string>https://mynutri-staging.firebaseio.com</string>
 </dict>
 </plist>
